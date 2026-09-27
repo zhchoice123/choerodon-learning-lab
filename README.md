@@ -1,5 +1,7 @@
 # Choerodon Learning Lab
 
+> **[在线体验 Choerodon Learning Lab](https://zhchoice.xyz/choerodon/)**：无需安装或登录，自动按浏览器独立保存练习与重置备份。换网络仍可继续；换浏览器、无痕模式或清除网站 Cookie 后会创建新身份。mock 数据为临时练习数据。
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![React](https://img.shields.io/badge/React-16.14.0-blue.svg)](https://reactjs.org/)
 [![MobX](https://img.shields.io/badge/MobX-4.15.7-orange.svg)](https://mobx.js.org/)
