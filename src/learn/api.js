@@ -1,5 +1,5 @@
 // 本地学习接口的前端客户端（契约：docs/workspace/CONTRACT.md 第 4、5 节）
-// 接口只在 yarn start 时由 dev server 提供；其他环境统一抛出 code 为 UNAVAILABLE 的错误。
+// 本地由 yarn start 提供；云端隔离服务复用本契约。仅上传普通 build/ 时接口不可用。
 const BASE_URL = '/__learn/api';
 const UNAVAILABLE_MESSAGE = '本地学习接口不可用，请用 yarn start 启动项目后使用在线编辑';
 

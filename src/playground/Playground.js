@@ -161,23 +161,23 @@ export default function Playground() {
         transport: {
             // 1. 查询数据接口 (GET)
             read: {
-                // 开发环境下使用本地 Mock 接口，避免直连 8080 的 CORS 跨域及 401 鉴权拦截
-                url: '/mock/guide/user',
+                // 自由练习区独立内存数据；读写同源，重启 yarn start 恢复种子。
+                url: '/mock/playground/users',
                 method: 'GET',
             },
             // 2. 更新修改接口 (PUT) - 关键：点击保存时触发
             update: {
-                url: 'http://localhost:8080/api/users',
+                url: '/mock/playground/users',
                 method: 'PUT',
             },
             // 3. 新增数据接口 (POST) - 点击新增并保存时触发
             create: {
-                url: 'http://localhost:8080/api/users',
+                url: '/mock/playground/users',
                 method: 'POST',
             },
             // 4. 删除数据接口 (DELETE) - 点击删除时触发
             destroy: {
-                url: 'http://localhost:8080/api/users',
+                url: '/mock/playground/users',
                 method: 'DELETE',
             },
         }

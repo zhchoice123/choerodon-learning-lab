@@ -6,6 +6,7 @@ import { learnApi, unitNumberFromKey } from '../api';
 import { HOME_ROUTE, addNavigationGuard, navigate } from '../router';
 import { DIFFICULTIES, DIFFICULTY_LABELS, UNIT_STATE_LABELS } from '../constants';
 import ErrorBoundary from './ErrorBoundary';
+import CloudPreview from '../cloud/CloudPreview';
 import './workspace.css';
 
 // 配置 Monaco 使用本地 AMD 静态资源路由，不使用外部 CDN。
@@ -615,7 +616,7 @@ export default function UnitWorkspace({ unit }) {
             <div className="workspace-preview-inner">
               <ErrorBoundary resetKey={savedCode}>
                 {/* exclusivePreview（如单元 09）：隐藏的预览不挂载，避免两边的全局配置互相影响 */}
-                {exclusivePreview && activeTab !== 'exercise' ? null : Exercise ? <Exercise /> : <div>练习组件不可用</div>}
+                {exclusivePreview && activeTab !== 'exercise' ? null : process.env.REACT_APP_CLOUD_WORKSPACE === 'true' ? <CloudPreview code={savedCode} unitNumber={unitNumber} /> : Exercise ? <Exercise /> : <div>练习组件不可用</div>}
               </ErrorBoundary>
             </div>
           </div>

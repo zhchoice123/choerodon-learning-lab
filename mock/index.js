@@ -10,6 +10,7 @@ const registerUnit06 = require('./unit06');
 const registerUnit07 = require('./unit07');
 const registerUnit08 = require('./unit08');
 const registerUnit09 = require('./unit09');
+const registerPlayground = require('./playground');
 
 module.exports = function registerMock(app) {
   registerUnit03(app);
@@ -19,6 +20,7 @@ module.exports = function registerMock(app) {
   registerUnit07(app);
   registerUnit08(app);
   registerUnit09(app);
+  registerPlayground(app);
   // 员工列表：学习单元「练习」、自由练习区使用
   listRoute(app, '/mock/guide/user', () => users);
   // 角色列表：学习单元「样例」使用

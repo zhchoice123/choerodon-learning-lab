@@ -2,139 +2,95 @@
 
 > **[在线体验 Choerodon Learning Lab](https://zhchoice.xyz/choerodon/)**：无需安装或登录，自动按浏览器独立保存练习与重置备份。换网络仍可继续；换浏览器、无痕模式或清除网站 Cookie 后会创建新身份。mock 数据为临时练习数据。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![React](https://img.shields.io/badge/React-16.14.0-blue.svg)](https://reactjs.org/)
-[![MobX](https://img.shields.io/badge/MobX-4.15.7-orange.svg)](https://mobx.js.org/)
-[![Choerodon UI](https://img.shields.io/badge/Choerodon%20UI-1.6.7-red.svg)](https://open.hand-china.com/choerodon-ui/zh)
-[![Node](https://img.shields.io/badge/Node-20.18.0-green.svg)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/Tests-208%20passed-brightgreen.svg)](#测试与验证)
+[![CI](https://github.com/zhchoice123/choerodon-learning-lab/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/zhchoice123/choerodon-learning-lab/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> **Choerodon UI Pro 交互式实战学习工作台**：免 IDE、零外部网络依赖、开箱即用的前端企业级组件库沉浸式演练平台。
+面向 Choerodon UI Pro **1.6.7** 的个人学习工作台。通过完整样例、带 TODO 的练习和可观察的验收标准，学习 DataSet、表格、表单及业务交互。
 
----
+这是社区学习项目，与 Choerodon 官方无隶属关系。项目采用 AI 辅助开发和人工验收；示例用于教学，不代表生产系统设计建议。
 
-## 📖 项目简介
+## 能做什么
 
-Choerodon UI Pro 是国内企业级开发（如 HZero 微服务平台）广泛采用的中后台前端组件库。其核心采用 `DataSet` 响应式数据驱动体系，集成了 MobX 状态管理、级联 Lookup、复杂校验与主从表提交等特性，具有较高的工程生产力，但对初学者而言学习曲线较陡。
+- 9 个单元，每个单元提供入门、标准、挑战三档原始模板。
+- 浏览器内 Monaco 编辑器：查看样例和说明，编辑 Exercise.js，按 Ctrl/Cmd+S 保存，通过开发服务器热更新预览。
+- 保存前检查 JSX 语法；预览组件使用错误边界；离开未保存页面时提示。
+- 重置前备份当前练习，可通过页面或命令行操作。
+- 本地 mock 提供查询、校验、值集和增删改；安装依赖后，练习接口及编辑器资源不需要外部业务服务器或 CDN。
 
-**Choerodon Learning Lab** 为解决传统学习中“在本地 IDE、浏览器、文档之间频繁切换”的繁琐体验而设计。它直接在浏览器中集成 Monaco 编辑器与实时预览沙箱，让开发者无需打开本地 IDE，即可在页面中完成练习、快捷保存、实时热更与错误调试。
+**运行边界：**完整功能需要 `yarn start`。`yarn build` 只生成前端静态资源，不包含学习 API、mock、Monaco 静态资源服务或热编译。仅上传 `build/` 到 Nginx / GitHub Pages，不能得到完整学习工作台；接口不可用时仅显示降级提示，不保证源码与数据预览可用。详见 [运行与部署说明](docs/deployment.md)。
 
----
+## 云端在线实例
 
-## ✨ 核心特性
+[zhchoice.xyz 的学习入口](https://zhchoice.xyz/choerodon/) 免登录，自动识别当前浏览器并独立保存练习与重置备份。换网络不丢进度；不同浏览器或清除网站 Cookie 后是新身份。云端使用独立 API 和浏览器沙箱，不运行共享 CRA 写入服务。配置、限制和回滚见 [部署与运维](deployment/README.md)。
 
-- 💻 **Monaco 在线学习工作台**：彻底摆脱外部 CDN 依赖，通过本地 AMD 路由按需加载 Monaco 资源；开启原生 React JSX 编译支持，JSX 语法着色自然且无语法红线。
-- ⚡ **毫秒级热更新预览**：在编辑器中修改练习代码，按 `Ctrl/Cmd + S` 保存后，依托 Webpack Fast Refresh 毫秒级无刷新更新右侧预览视图。
-- 🛡️ **双层错误隔离与防白屏**：
-  - 预览区封装 `ErrorBoundary`，代码抛出运行时异常时，仅在预览区域呈现红底错误堆栈，编辑器与主页面完全可用；代码修复保存后自动恢复。
-  - 自动打入补丁禁用 Create React App 默认的全屏红色遮罩（保留真正的语法编译错误提示）。
-- 🎯 **三档难度分层与安全备份**：
-  - 每个单元提供 **入门（细致拆解）**、**标准（与单元契约一致）**、**挑战（进阶实战）** 三种模板。
-  - 随时切换难度或一键重置，原文件自动在 `.backup/` 目录下生成带时间戳的安全备份。
-- 🚦 **多层未保存保护**：
-  - 路由守卫拦截（侧边栏跳转或返回首页）、内部标签切换拦截、浏览器刷新与关闭（`beforeunload`）三重防护，防止手滑丢失作业。
-- 🔌 **全天候优雅降级**：
-  - 本地学习 API 服务未启动或在纯静态环境（如 GitHub Pages）下，自动进入只读降级模式，呈现提示横幅与源码，两个预览组件照常可用，绝不白屏。
-- 🧪 **自动化测试与工业级契约**：
-  - 包含 150+ 个前端单元测试和 30+ 个 Node 服务端测试，覆盖白名单安全、路径穿越防御、200KB 限额与回滚等边缘场景。
+## 快速开始
 
----
-
-## 🗺️ 单元学习路线 (Roadmap)
-
-| 单元 | 核心知识点 | 状态 |
-|:---|:---|:---:|
-| **01 DataSet 基础与 Table 绑定** | primaryKey、autoQuery、分页协议、DataSet 字段类型、Table 绑定机制 | ✅ 已开放 |
-| **02 查询条件与参数适配** | 独立 queryDataSet 绑定、参数过滤与映射、假值处理、快捷查询 | ✅ 已开放 |
-| **03 校验规则与动态 Lookup** | required/validator 校验器、级联下拉 Lookup、代码缓存与联动重置 | ✅ 已开放 |
-| **04 Form 表单与复杂控件联动** | 响应式 Form、DatePicker 适配、Switch/Radio、多字段计算与只读切换 | ✅ 已开放 |
-| **05 Table 批量提交与状态流转** | 增删改状态标记（`__status`）、提交校验、write 并发控制、错误回滚 | ✅ 已开放 |
-| **06 Field 级联事件与动态计算** | `dynamicProps` 计算属性、`initEvents` 监听、Record 级联属性推导 | ✅ 已开放 |
-| **07 主从数据集级联与同步提交** | `bind` 绑定主从关系、`cascadeParams` 过滤、主从事务一致性提交 | ✅ 已开放 |
-| **08 Modal & Drawer 弹窗事务** | 命令式 `Modal.open`、抽屉表单绑定、异步确定保存、关闭状态恢复 | ✅ 已开放 |
-| **09 全局配置与国际化扩展** | `configure` 全局配置、`localeContext` 语言包、全局 Transport 适配 | ✅ 已开放 |
-
----
-
-## 🚀 快速上手
-
-### 环境要求
-- **Node.js**：`^20.18.0`（建议使用 `v20.18.x`，不建议使用 Node 22+）
-- **包管理器**：`Yarn Classic 1.22.22`（必须使用 Yarn 并锁定 `yarn.lock`；请勿使用 `npm`）
-
-### 安装与运行
+已验证环境：Node **20.18.0**、Yarn Classic **1.22.22**。依赖版本为课程固定条件；其他 Node 主版本尚未作为支持环境验收，不代表已经验证不兼容。建议使用独立版本管理器，勿替换服务器上其他项目共用的 Node。
 
 ```bash
-# 1. 克隆仓库
-git clone https://github.com/your-username/choerodon-learning-lab.git
+git clone https://github.com/zhchoice123/choerodon-learning-lab.git
 cd choerodon-learning-lab
-
-# 2. 安装锁定依赖
+# 已安装 nvm 时：nvm install && nvm use
 yarn install --frozen-lockfile
-
-# 3. 启动开发服务器（包含学习 API、Monaco 资源服务与 Mock 服务）
+cp .env.example .env.local
 yarn start
 ```
 
-启动后在浏览器打开 [http://localhost:3000](http://localhost:3000)：
-1. 首页展示所有单元卡片，点击任意卡片的难度按钮（如 **入门 / 标准 / 挑战**）即可进入单元工作台。
-2. 在左侧 Monaco 编辑器中完成带有 `// TODO` 的练习代码。
-3. 按快捷键 `Ctrl + S`（Mac 上为 `Cmd + S`），右侧预览将即时更新！
+打开 [http://localhost:3000/#/](http://localhost:3000/#/)。`.env.example` 默认只监听本机，不需要任何密钥。安装依赖需要网络。
 
----
+1. 首页选择单元与难度。先读「样例」和「说明」，再完成「练习」的 TODO。
+2. 按 Ctrl/Cmd+S 保存实际的 `src/units/0X-xxx/Exercise.js`，右侧预览随编译更新。
+3. 重置或重新选择难度会覆盖练习，原代码先备份到 `.backup/<单元目录>/`。如需恢复，先另存当前代码，再把选定备份复制回 Exercise.js。
 
-## ⌨️ 常用工作流与命令行
+**修改 `mock/`、`devtools/` 或 `src/setupProxy.js` 后必须重启 `yarn start`。** 若 3000 被占用，检查已有服务终端；不要误把旧服务当成新代码，也不要停止其他项目的服务。浏览器地址以当前终端输出为准。
 
-### 快捷操作
-- **保存代码**：在工作台中按 `Ctrl/Cmd + S`，或点击顶部工具栏的「保存」按钮。
-- **重置练习**：点击顶部「重置」下拉选择对应难度并确认，当前练习会自动备份至 `.backup/` 目录。
-- **查看样例与文档**：工作台上方提供「练习」、「样例（只读完整实现）」和「说明（Markdown 笔记与思考题）」三个标签页随时切换。
+## 学习路线
 
-### 命令行工具
-项目内置了便捷的练习管理脚本：
+| 单元 | 主题 |
+| --- | --- |
+| 01 | DataSet 基础、Table 绑定与分页 |
+| 02 | 查询条件、查询参数与查询栏 |
+| 03 | 字段校验、异步 validator、options 与 lookupCode |
+| 04 | Form、字段组件、只读与布局 |
+| 05 | 行内编辑、增删改提交、状态与失败处理 |
+| 06 | 字段联动、事件与级联下拉 |
+| 07 | children 主从数据集与一起提交 |
+| 08 | Modal 弹窗、抽屉、校验与取消回滚 |
+| 09 | 全局配置、国际化与响应格式适配 |
 
-```bash
-# 查看所有单元的当前状态与匹配难度
-yarn unit:list
+全部单元已开放。练习中的未实现功能是学习任务，验收要求见各单元 README；样例与练习使用不同业务数据。
 
-# 将指定单元重置为指定难度模板（会自动备份当前文件）
-yarn unit:reset 02 hard
-yarn unit:reset 05 normal
-```
-
----
-
-## 🧪 测试与验证
-
-项目具备极高的测试覆盖率，建议在提交改动前执行全量验证：
+## 命令与验证
 
 ```bash
-# 运行全部前端 Jest 测试（包含工作台、首页与各单元练习测试）
-CI=true yarn test --watchAll=false
-
-# 运行 Node 端工具测试与接口安全契约测试
-node --test scripts/ devtools/
-
-# 运行生产环境构建打包
-CI=true yarn build
+yarn unit:list                          # 查看难度和当前模板匹配状态
+yarn unit:reset 2 hard                   # 先备份，再用挑战模板覆盖单元 02
+node --test scripts/ devtools/           # Node 工具、本地 API 与 mock 测试
+CI=true yarn test --watchAll=false --runInBand  # Jest / React Testing Library
+CI=true yarn build                      # 编译前端，不能替代完整服务
 ```
 
----
+CI 在 push / PR 时执行测试与构建。没有设定覆盖率百分比门槛，也不保证所有浏览器行为都被自动测试覆盖。历史验证记录在 [docs/](docs/)，最新开源收尾记录见 [open-source-verification.md](docs/open-source-verification.md)。
 
-## 🏗️ 依赖兼容与技术背景说明
+## 目录与数据
 
-- **React 16.14.0 & MobX 4.15.7**：严格匹配 Choerodon UI 1.6.7 的底层依赖要求；保留 `ReactDOM.render` 挂载机制且不开启 StrictMode。
-- **react-virtualized 解析覆盖**：通过 `resolutions` 将 Choerodon 依赖的 `9.18.5` 锁定为 `9.22.6`，解决 Webpack 5 环境下的循环初始化报错。
-- **Axios ESM 转换**：在 Jest 配置中对 Axios 进行 Babel 转译，保证测试直接运行真实的 Choerodon 组件与 DataSet 数据流，无需 Mock 组件库本身。
+- `src/units/`：样例、练习、三档模板和学习文档。
+- `src/learn/`：首页、路由、编辑器与预览。
+- `src/playground/`：自由练习区和框架学习资源。
+- `mock/`：CommonJS 本地业务接口；写数据只在内存中，重启后恢复种子。
+- `devtools/`：练习文件读写、源码语法检查和 Monaco 静态资源服务。
+- `scripts/`：重置工具与依赖安装补丁。
+- `docs/`：验证记录及历史任务契约；旧记录中的提交、开放状态和端口仅描述当时结果。
 
----
+单元写接口与自由练习区拥有各自的内存集合。自由练习区主表读写 `/mock/playground/users`，支持员工与嵌套地址；名称 `FAIL` 可复现提交失败。原有编码黑名单等个人练习规则保留，新增员工请使用未占用的 `EMP900` 等编码，ID 留空。第二个只读查询练习仍使用共享种子接口。
 
-## 🤝 参与贡献
+## 使用限制与反馈
 
-欢迎提交 Issue 和 Pull Request！请在提交代码前阅读 [贡献指南 (CONTRIBUTING.md)](./CONTRIBUTING.md)。
+本地开发模式没有用户隔离，所有访问者操作同一份练习文件；React 错误边界只处理部分渲染异常，不能隔离恶意代码、死循环或任意异步错误。**不要把开发服务器和文件写接口直接开放到公网。** 云端自动身份模式另见 [部署与运维](deployment/README.md)，不能通过简单去掉开发服务器的密码来替代。
 
----
+[本次依赖审计](docs/dependency-audit.md) 已报告未修复的安全问题；本仓库未承诺生产安全认证或安全维护 SLA。依赖更新需要单独验证课程兼容性。React 16 / Choerodon 1.6.7 的部分旧生命周期和 DOM 属性警告仍存在；构建也会提示主包较大。
 
-## 📄 开源许可证
-
-本项目采用 [MIT License](./LICENSE) 开源许可证。
+- 使用问题或功能建议：[GitHub Issues](https://github.com/zhchoice123/choerodon-learning-lab/issues)
+- 参与开发：[贡献指南](CONTRIBUTING.md)、[行为准则](CODE_OF_CONDUCT.md)
+- 安全问题：[安全政策](SECURITY.md)，不要公开敏感漏洞细节或密钥
+- 许可证：[MIT](LICENSE)；第三方组件、资源与许可边界见 [第三方说明](THIRD_PARTY_NOTICES.md)

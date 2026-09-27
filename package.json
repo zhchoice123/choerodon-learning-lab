@@ -4,6 +4,13 @@
   "private": true,
   "description": "Choerodon UI Pro 交互式实战学习工作台：集成本地 Monaco 编辑器、代码实时热更新、运行时错误隔离与渐进式难度梯度的实战教学平台",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhchoice123/choerodon-learning-lab.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zhchoice123/choerodon-learning-lab/issues"
+  },
   "keywords": [
     "choerodon-ui",
     "choerodon-ui-pro",
@@ -40,7 +47,6 @@
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
-  "proxy": "https://hzero-test.open.hand-china.com",
   "scripts": {
     "postinstall": "node scripts/strip-broken-sourcemaps.js && node scripts/patch-dev-overlay.js",
     "start": "react-scripts start",

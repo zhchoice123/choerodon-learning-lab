@@ -1,74 +1,53 @@
-# 贡献指南 (Contributing Guide)
+# 贡献指南
 
-感谢你对 **Choerodon Learning Lab** 的关注！我们欢迎社区贡献者一同完善这门面向企业级中后台组件库 Choerodon UI Pro 的实战学习体系。
+欢迎修正文档、补充可复现测试、改进学习体验。提交前请阅读 [行为准则](CODE_OF_CONDUCT.md) 和 [安全政策](SECURITY.md)。
 
----
+## 环境与启动
 
-## 🛠️ 环境要求
-
-本项目经过严格锁相依赖适配，请确保使用以下环境开发与构建：
-
-- **Node.js**：`^20.18.0`（暂不建议使用 Node 22，以避免部分开发依赖的原生绑定或解析告警）
-- **包管理器**：`Yarn Classic 1.22.22`（**必须**使用 Yarn 并遵循 `yarn.lock`；请勿使用 `npm` 安装，以防 resolutions 字段失效导致循环初始化报错）
-
----
-
-## 🚀 本地开发与测试
+使用 `.nvmrc` 中的 Node 20.18.0 和 Yarn Classic 1.22.22：
 
 ```bash
-# 1. 安装锁定依赖
 yarn install --frozen-lockfile
-
-# 2. 启动本地开发服务（访问 http://localhost:3000）
+cp .env.example .env.local
 yarn start
+```
 
-# 3. 运行前端组件与平台单元测试
-CI=true yarn test --watchAll=false
+依赖安装会执行 `postinstall`，修复固定版本依赖的 source map 和 CRA 运行时遮罩；补丁只作用于本地 node_modules。不要提交 node_modules 或构建输出。修改开发中间件和 mock 后重启服务。
 
-# 4. 运行后端工具与接口契约测试
+## 分支与提交
+
+仓库默认分支是 `master`。外部贡献者先 fork，从最新的 `upstream/master` 创建分支，PR 目标为 `master`。历史任务文档中的 `main` 指当时的开发流程。
+
+提交主题用简洁的动词开头，例如 `Fix playground mock submission`。不强制 Conventional Commits。每个 PR 聚焦一个问题，提供：
+
+- 改动原因和可观察的行为变化，相关 Issue（如有）。
+- 实际执行的命令、结果，以及尚未验证的部分。
+- UI 改动的截图或操作步骤；接口改动的成功与失败用例。
+- 是否触及练习、模板或依赖；不要夹带自己的作业答案或运行数据。
+
+## 代码与课程约定
+
+2 空格缩进、单引号、分号；函数组件使用 PascalCase 文件名，注释和教学文案使用中文。CRA 的 ESLint 配置为 react-app / react-app/jest，没有另外配置格式化器。
+
+保持 Choerodon UI 1.6.7、React 16.14、MobX 4.15.7、mobx-react 6.1.5 和 CRA 5 固定；未经单独讨论不要升级依赖或重写锁文件。使用 ReactDOM.render，不启用 StrictMode；DataSet 用 useMemo 创建。Table 使用 editor；类型和标签写在 fields 中。
+
+默认数据协议是 `content` / `totalElements` 和从 1 开始的 `page` / `pagesize`；单元 09 为教学有意演示其他协议。请以单元 README 和源码依据为准。
+
+保护已有 Exercise.js 和自由练习内容。新增练习初始文件与 normal 模板逐字节一致，三档未完成时均能渲染；给出 TODO 和提示，不提交练习答案。写 mock 使用独立内存集合，不改变其他单元行为。
+
+## 验证
+
+```bash
+yarn unit:list
 node --test scripts/ devtools/
-
-# 5. 执行生产环境打包构建
+CI=true yarn test --watchAll=false --runInBand
 CI=true yarn build
 ```
 
----
+前端使用 Jest / React Testing Library，文件为 `src/**/*.test.js`；Node 使用内置 node:test，文件为 `scripts/*.test.js`、`devtools/*.test.js`。没有硬性覆盖率百分比要求；测试应验证行为，尤其是提交失败、状态保留、路径限制和备份。
 
-## 📁 目录组织与规范
+文件读写测试使用临时副本，不能重置真实作业。学习内容修改前后核对受保护文件 SHA-256，记录到 docs/。构建通过不等于浏览器验收通过：涉及 UI 时补充实际操作结果。没运行的检查标为 NOT RUN，不能写 PASS。
 
-- `src/units/`：核心教学单元目录（如 `01-dataset-basics/`、`02-query-conditions/` 等）：
-  - 每个单元必须包含：`Example.js`（完整实现）、`Exercise.js`（练习骨架，带 TODO 注释）、`README.md`（知识点讲解与踩坑指南）、`templates/`（包含 easy / normal / hard 三档模板）。
-  - 在 `src/units/index.js` 中按顺序集中注册。
-- `src/learn/`：在线学习平台前端核心（路由管理、首页卡片与难度选择、Monaco 交互工作台）。
-- `devtools/`：开发期本地服务（学习 API 服务、Monaco AMD 本地静态资源分发）。
-- `mock/`：CommonJS 规范的本地数据 Mock 路由。
-- `scripts/`：练习重置工具（`unit.js`）及 CRA 错误层补丁。
+## 许可与维护
 
----
-
-## 📝 代码风格与约定
-
-1. **语法与格式**：
-   - 2 空格缩进，单引号，加末尾分号。
-   - UI 界面提示文案、注释与教学说明统一使用**规范中文**。
-   - 组件使用函数式组件与 Hooks，文件名采用 PascalCase（如 `UnitWorkspace.js`）。
-2. **Choerodon UI 核心实践**：
-   - DataSet 实例在组件中统一使用 `useMemo` 创建，避免多次渲染重复创建。
-   - 遵循标准数据契约：`dataKey: 'content'`, `totalKey: 'totalElements'`，分页 1-indexed。
-   - 字段类型（string, number, boolean, date）与标签定义在 DataSet fields，Table columns 保持声明只配置 `name` 与布局。
-3. **保留学习者代码**：
-   - 编写或调整练习时，请保留清晰的 `// TODO` 引导注释与思考题，注重启发而非直接给出完整答案。
-
----
-
-## 🤝 提交 Pull Request
-
-1. **新建分支**：从 `main` 切出特性分支，例如 `git checkout -b feat/unit-09-global-config`。
-2. **本地全量验证**：提交前确保以下 3 项命令全部通过：
-   ```bash
-   node --test scripts/ devtools/
-   CI=true yarn test --watchAll=false
-   CI=true yarn build
-   ```
-3. **清晰的提交信息**：采用语义化 Commit，例如 `feat(units): add unit 09 global config and locale`。
-4. **提交 PR**：描述你的改动意图、验证结果与需要协作者关注的细节。
+请仅贡献有权按本项目 MIT 许可证发布的内容，保留引入代码与资源的出处和许可。无需签署额外 CLA。不提交令牌、真实个人资料、`.env.local`、作业备份或个人绝对路径。维护者按实际精力处理 Issue / PR，不承诺响应时限。

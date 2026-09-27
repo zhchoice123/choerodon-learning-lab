@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [master, main]
@@ -9,6 +12,7 @@ on:
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -25,6 +29,9 @@ jobs:
 
       - name: Run Node backend tests
         run: node --test scripts/ devtools/
+
+      - name: Check lesson templates
+        run: yarn unit:list
 
       - name: Run frontend unit tests
         run: CI=true yarn test --watchAll=false --runInBand
