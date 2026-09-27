@@ -1,0 +1,80 @@
+{
+  "name": "choerodon-learning-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Choerodon UI Pro 交互式实战学习工作台：集成本地 Monaco 编辑器、代码实时热更新、运行时错误隔离与渐进式难度梯度的实战教学平台",
+  "license": "MIT",
+  "keywords": [
+    "choerodon-ui",
+    "choerodon-ui-pro",
+    "react",
+    "mobx",
+    "monaco-editor",
+    "dataset",
+    "learning-lab",
+    "interactive-tutorial"
+  ],
+  "engines": {
+    "node": ">=20.18.0 <21",
+    "yarn": "1.22.22"
+  },
+  "packageManager": "yarn@1.22.22",
+  "dependencies": {
+    "@babel/parser": "7.29.9",
+    "@babel/runtime": "^7.17.2",
+    "@monaco-editor/react": "4.7.0",
+    "@testing-library/dom": "^8.20.1",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "12.1.5",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "1.0.0",
+    "choerodon-ui": "1.6.7",
+    "lodash": "^4.17.21",
+    "marked": "4.3.0",
+    "mobx": "4.15.7",
+    "mobx-react": "6.1.5",
+    "mobx-react-lite": "1.5.2",
+    "monaco-editor": "0.52.2",
+    "react": "16.14.0",
+    "react-dom": "16.14.0",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^2.1.4"
+  },
+  "proxy": "https://hzero-test.open.hand-china.com",
+  "scripts": {
+    "postinstall": "node scripts/strip-broken-sourcemaps.js && node scripts/patch-dev-overlay.js",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "unit:reset": "node scripts/unit.js reset",
+    "unit:list": "node scripts/unit.js list"
+  },
+  "jest": {
+    "transformIgnorePatterns": [
+      "[/\\\\]node_modules[/\\\\](?!axios[/\\\\]).+\\.(js|jsx|mjs|cjs|ts|tsx)$",
+      "^.+\\.module\\.(css|sass|scss)$"
+    ]
+  },
+  "resolutions": {
+    "react-virtualized": "9.22.6"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

@@ -1,0 +1,88 @@
+:root {
+  --primary-color: #2563eb;
+  --primary-hover: #1d4ed8;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --bg-slate: #f8fafc;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-slate);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code, kbd, samp, pre {
+  font-family: 'JetBrains Mono', 'Fira Code', source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* 优雅平滑滚动条 */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 全局选区高亮 */
+::selection {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Choerodon UI 全局模态窗体与消息通知美化 */
+.c7n-pro-modal-mask {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+.c7n-pro-modal-content {
+  border-radius: 12px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  overflow: hidden;
+}
+
+.c7n-pro-modal-header {
+  border-bottom: 1px solid #f1f5f9 !important;
+  padding: 16px 24px !important;
+}
+
+.c7n-pro-modal-title {
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  color: #0f172a !important;
+}
+
+.c7n-pro-modal-footer {
+  border-top: 1px solid #f1f5f9 !important;
+  padding: 14px 24px !important;
+}
+
+.c7n-message-notice-content {
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+  font-size: 13.5px !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  padding: 10px 18px !important;
+}
+

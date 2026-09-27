@@ -1,0 +1,124 @@
+.app {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.app-nav {
+  flex: 0 0 256px;
+  padding: 16px 0;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 1px 0 4px rgba(0, 0, 0, 0.02);
+  user-select: none;
+}
+
+.app-nav-title {
+  padding: 8px 18px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.2px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 8px;
+}
+
+.app-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 2px 10px;
+  padding: 8px 12px;
+  color: #475569;
+  font-size: 13.5px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.app-nav-item:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.app-nav-item.active {
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 #2563eb;
+}
+
+.app-nav-tag {
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  background: #f1f5f9;
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.app-nav-divider {
+  margin: 10px 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 36px;
+  background-color: #f8fafc;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.unit-points {
+  margin: 10px 0 14px;
+  padding-left: 20px;
+  color: #475569;
+  font-size: 13.5px;
+  line-height: 1.8;
+  list-style: disc;
+}
+
+.unit-doc {
+  margin-bottom: 18px;
+  color: #64748b;
+  font-size: 12.5px;
+}
+
+.unit-locked {
+  padding: 48px;
+  color: #64748b;
+  text-align: center;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.status-bar {
+  margin-bottom: 14px;
+  padding: 10px 16px;
+  color: #1e293b;
+  font-size: 13px;
+  background: #ffffff;
+  border-left: 4px solid #2563eb;
+  border-radius: 0 8px 8px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
