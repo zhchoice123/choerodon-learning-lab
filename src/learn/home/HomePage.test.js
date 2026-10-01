@@ -142,3 +142,32 @@ test('entering is still possible after a failed progress request', async () => {
   await waitFor(() => expect(window.location.hash).toBe('#/unit-02'));
   expect(learnApi.resetExercise).not.toHaveBeenCalled();
 });
+
+test('chapter cards list their sections with progress, and a section opens directly', async () => {
+  const withSections = [
+    {
+      ...units[1],
+      sections: [
+        { key: 'unit-02-1', title: '02-1 查询字段：queryFields', kind: 'section' },
+        { key: 'unit-02-2', title: '02-2 read 函数：data 与 params', kind: 'section' },
+      ],
+    },
+  ];
+  learnApi.listUnits.mockResolvedValue([
+    { number: '02-1', key: 'unit-02-1', kind: 'section', state: 'in-progress', matched: null },
+    { number: '02-2', key: 'unit-02-2', kind: 'section', state: 'not-started', matched: 'normal' },
+    statuses[1],
+  ]);
+  render(<HomePage units={withSections} />);
+  const chapter = card('02 查询条件');
+  const first = await within(chapter).findByRole('button', { name: /02-1 查询字段/ });
+  expect(first).toHaveTextContent('进行中');
+  expect(within(chapter).getByRole('button', { name: /02-2 read 函数/ })).toHaveTextContent('未开始');
+  // 综合练习的三档按钮仍在
+  expect(within(chapter).getByText('本章综合练习 · 三档难度')).toBeInTheDocument();
+  expect(button('02 查询条件', '挑战')).toBeEnabled();
+
+  fireEvent.click(first);
+  await waitFor(() => expect(window.location.hash).toBe('#/unit-02-1'));
+  expect(learnApi.resetExercise).not.toHaveBeenCalled();
+});

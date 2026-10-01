@@ -1,5 +1,6 @@
 import Example from './Example';
 import Exercise from './Exercise';
+import sections from './sections';
 import './unit09.css';
 
 const unit09 = {
@@ -16,6 +17,7 @@ const unit09 = {
   ],
   // 样例和练习各自修改全局配置，同时挂载会互相影响：工作台只挂载当前标签的预览
   exclusivePreview: true,
+  sections,
   Example,
   Exercise,
 };

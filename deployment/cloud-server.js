@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const express = require('express');
 const babel = require('@babel/core');
 const { parse } = require('@babel/parser');
-const { createUnitTools } = require('../scripts/unit');
+const { createUnitTools, parseLessonId } = require('../scripts/unit');
 const readRegisteredUnits = require('../devtools/lib/registered-units');
 const registerMock = require('../mock');
 const registerMonaco = require('../devtools/monaco-static');
@@ -37,6 +37,11 @@ function createCloudApp({ rootDir = path.resolve(__dirname, '..'), dataDir, orig
   fs.mkdirSync(dataDir, { recursive: true, mode: 0o700 });
   const source = createUnitTools({ rootDir });
   const units = readRegisteredUnits(rootDir, source);
+  // 课程 = 已开放章节的小节 + 章节本身（综合练习），与本地接口的顺序一致
+  const lessonId = (lesson) => lesson.id || String(lesson.number).padStart(2, '0');
+  const lessons = units.flatMap((unit) => [...(unit.sections || []), unit]);
+  const unitsRoot = path.resolve(rootDir, 'src/units');
+  const relativeDir = (lesson) => path.relative(unitsRoot, lesson.directory);
   const app = express();
   app.disable('x-powered-by');
   const mocks = new Map();
@@ -84,36 +89,54 @@ function createCloudApp({ rootDir = path.resolve(__dirname, '..'), dataDir, orig
       try {
         fs.mkdirSync(path.join(temporary, 'src/units'), { recursive: true, mode: 0o700 });
         fs.copyFileSync(path.join(rootDir, 'src/units/index.js'), path.join(temporary, 'src/units/index.js'));
-        for (const unit of units.filter((item) => item.directory)) {
-          const target = path.join(temporary, 'src/units', path.basename(unit.directory));
-          fs.mkdirSync(target);
-          for (const file of ['index.js', 'Example.js', 'README.md']) fs.copyFileSync(path.join(unit.directory, file), path.join(target, file));
-          fs.cpSync(path.join(unit.directory, 'templates'), path.join(target, 'templates'), { recursive: true });
-          fs.copyFileSync(path.join(target, 'templates/Exercise.normal.js'), path.join(target, 'Exercise.js'));
-        }
+        provision(temporary);
         fs.writeFileSync(path.join(temporary, 'visitor.json'), JSON.stringify({ createdAt: new Date().toISOString() }));
         fs.renameSync(temporary, root);
       } finally {
         if (fs.existsSync(temporary)) fs.rmSync(temporary, { recursive: true });
       }
     }
-    return fs.existsSync(root) ? createUnitTools({ rootDir: root }) : null;
+    if (!fs.existsSync(root)) return null;
+    // 旧访客的工作区创建于小节上线之前：只补齐缺少的课程目录，已有作业一律不动
+    provision(root);
+    return createUnitTools({ rootDir: root });
+  }
+  function provision(root) {
+    for (const lesson of lessons.filter((item) => item.directory)) {
+      const target = path.join(root, 'src/units', relativeDir(lesson));
+      if (fs.existsSync(path.join(target, 'Exercise.js'))) continue;
+      fs.mkdirSync(target, { recursive: true, mode: 0o700 });
+      for (const file of ['index.js', 'Example.js', 'README.md']) fs.copyFileSync(path.join(lesson.directory, file), path.join(target, file));
+      fs.cpSync(path.join(lesson.directory, 'templates'), path.join(target, 'templates'), { recursive: true });
+      fs.copyFileSync(path.join(target, 'templates/Exercise.normal.js'), path.join(target, 'Exercise.js'));
+    }
   }
   const template = (unit) => fs.readFileSync(path.join(unit.directory, 'templates/Exercise.normal.js'), 'utf8');
-  const state = (tools, unit) => tools ? tools.getUnitState(unit.number) : { state: 'not-started', matched: 'normal', difficulties: ['easy', 'normal', 'hard'] };
+  const state = (tools, lesson) => tools
+    ? tools.getUnitState(lessonId(lesson))
+    : { state: 'not-started', matched: 'normal', difficulties: lesson.kind === 'section' ? ['normal'] : ['easy', 'normal', 'hard'] };
   const api = express.Router();
   api.use(express.json({ limit: MAX_BYTES }));
   api.get('/units', (req, res) => {
     const tools = toolsFor(req);
-    res.json({ units: units.map((unit) => ({ number: String(unit.number).padStart(2, '0'), key: `unit-${String(unit.number).padStart(2, '0')}`, title: unit.title, open: Boolean(unit.directory), ...state(tools, unit) })) });
+    res.json({ units: lessons.map((lesson) => ({
+      number: lessonId(lesson),
+      key: `unit-${lessonId(lesson)}`,
+      chapter: String(lesson.number).padStart(2, '0'),
+      kind: lesson.kind || 'chapter',
+      title: lesson.title,
+      open: Boolean(lesson.directory),
+      ...(lesson.directory ? state(tools, lesson) : { state: 'locked', matched: null, difficulties: [] }),
+    })) });
   });
   api.param('number', (req, res, next, number) => {
-    req.unit = /^\d{1,2}$/.test(number) && units.find((unit) => unit.number === Number(number) && unit.directory);
+    const parsed = parseLessonId(number);
+    req.unit = parsed && lessons.find((lesson) => lessonId(lesson) === parsed.id && lesson.directory);
     return req.unit ? next() : error(res, 404, '找不到单元。');
   });
   api.get('/units/:number/exercise', (req, res) => {
     const tools = toolsFor(req);
-    const code = tools ? fs.readFileSync(tools.exercisePath(req.unit.number), 'utf8') : template(req.unit);
+    const code = tools ? fs.readFileSync(tools.exercisePath(lessonId(req.unit)), 'utf8') : template(req.unit);
     res.json({ code, ...state(tools, req.unit) });
   });
   // 固定 Babel 插件只转换语法；禁止读取 .babelrc、解析访客依赖或在服务器执行代码。
@@ -128,17 +151,21 @@ function createCloudApp({ rootDir = path.resolve(__dirname, '..'), dataDir, orig
   api.put('/units/:number/exercise', (req, res) => {
     if (!validate(req.body.code, res)) return;
     const tools = toolsFor(req, true);
-    const result = tools.saveExercise(req.unit.number, req.body.code);
+    const result = tools.saveExercise(lessonId(req.unit), req.body.code);
     res.json({ saved: true, ...result });
   });
   api.post('/units/:number/reset', (req, res) => {
     if (!['easy', 'normal', 'hard'].includes(req.body.difficulty)) return error(res, 400, '请选择 easy、normal 或 hard。');
     const tools = toolsFor(req, true);
+    // 小节只有 normal 一档：请求不存在的难度是 404，不能落到通用错误处理变成 500
+    if (!tools.getUnitState(lessonId(req.unit)).difficulties.includes(req.body.difficulty)) {
+      return error(res, 404, '这个课程没有该难度的模板。');
+    }
     // 保留所有备份，不自动丢弃作业；达到额度时拒绝继续产生备份。
     const backups = path.join(visitorRoot(req), '.backup');
     const bytes = (dir) => fs.existsSync(dir) ? fs.readdirSync(dir, { withFileTypes: true }).reduce((sum, item) => sum + (item.isDirectory() ? bytes(path.join(dir, item.name)) : fs.statSync(path.join(dir, item.name)).size), 0) : 0;
     if (bytes(backups) > 10 * 1024 * 1024 - MAX_BYTES) return error(res, 409, '重置备份已达到 10 MB，请联系管理员导出后整理。');
-    res.json(tools.resetUnit(req.unit.number, req.body.difficulty));
+    res.json(tools.resetUnit(lessonId(req.unit), req.body.difficulty));
   });
   for (const [route, filename, key] of [['example', 'Example.js', 'code'], ['readme', 'README.md', 'markdown']]) {
     api.get(`/units/:number/${route}`, (req, res) => res.json({ [key]: fs.readFileSync(path.join(req.unit.directory, filename), 'utf8') }));

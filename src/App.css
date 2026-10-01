@@ -122,3 +122,15 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
+
+/* 当前章节展开的小节列表 */
+.app-nav-sections {
+  margin: 0 0 6px 18px;
+  border-left: 1px solid #e2e8f0;
+}
+
+.app-nav-sections .app-nav-item {
+  margin: 1px 10px 1px 8px;
+  padding: 6px 10px;
+  font-size: 12.5px;
+}

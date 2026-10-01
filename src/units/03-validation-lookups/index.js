@@ -1,5 +1,6 @@
 import Example from './Example';
 import Exercise from './Exercise';
+import sections from './sections';
 
 const unit03 = {
   key: 'unit-03',
@@ -12,6 +13,7 @@ const unit03 = {
     'lookupCode 与字段级 lookupAxiosConfig',
     '等待 validate()，区分校验通过与保存成功',
   ],
+  sections,
   Example,
   Exercise,
 };

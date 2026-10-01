@@ -1,5 +1,6 @@
 import Example from './Example';
 import Exercise from './Exercise';
+import sections from './sections';
 
 const unit04 = {
   key: 'unit-04',
@@ -12,6 +13,7 @@ const unit04 = {
     'columns / colSpan 表单布局',
     'checkValidity 校验、表单 reset 事件与记录回滚',
   ],
+  sections,
   Example,
   Exercise,
 };

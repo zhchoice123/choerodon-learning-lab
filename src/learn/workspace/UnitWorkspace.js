@@ -6,6 +6,9 @@ import { learnApi, unitNumberFromKey } from '../api';
 import { HOME_ROUTE, addNavigationGuard, navigate } from '../router';
 import { DIFFICULTIES, DIFFICULTY_LABELS, UNIT_STATE_LABELS } from '../constants';
 import ErrorBoundary from './ErrorBoundary';
+import HintsPanel from './HintsPanel';
+import LessonNav from './LessonNav';
+import { chapterOf } from '../lessons';
 import CloudPreview from '../cloud/CloudPreview';
 import './workspace.css';
 
@@ -59,8 +62,11 @@ function configureMonacoJSX(monaco) {
 }
 
 export default function UnitWorkspace({ unit }) {
-  const { key, title, Example, Exercise, doc, exclusivePreview } = unit || {};
+  const { key, title, Example, Exercise, doc, exclusivePreview, hints } = unit || {};
   const unitNumber = key ? unitNumberFromKey(key) : null;
+  // 小节只有一档难度（初始模板）；章节本身是该章的综合练习，保留三档
+  const isSection = unit?.kind === 'section';
+  const chapter = unit?.kind ? chapterOf(unit) : null;
 
   // 标签页状态：'exercise' | 'example' | 'readme'
   const [activeTab, setActiveTab] = useState('exercise');
@@ -319,7 +325,7 @@ export default function UnitWorkspace({ unit }) {
   };
 
   // 执行重置逻辑
-  const executeReset = async (difficulty, diffLabel) => {
+  const executeReset = async (difficulty, diffLabel, successText = `已重置为「${diffLabel}」难度`) => {
     setIsResetting(true);
     try {
       const result = await learnApi.resetExercise(unitNumber, difficulty);
@@ -341,7 +347,7 @@ export default function UnitWorkspace({ unit }) {
       if (result.backupPath) {
         setBackupPathNotice(result.backupPath);
       }
-      message.success(`已重置为「${diffLabel}」难度${backupMsg}`);
+      message.success(`${successText}${backupMsg}`);
     } catch (err) {
       message.error(err.message || '重置失败');
     } finally {
@@ -353,25 +359,28 @@ export default function UnitWorkspace({ unit }) {
   const handleReset = async () => {
     if (isResetting || isUnavailable || !unitNumber) return;
 
-    const diffLabel = DIFFICULTY_LABELS[selectedResetDifficulty] || selectedResetDifficulty;
+    const difficulty = isSection ? 'normal' : selectedResetDifficulty;
+    const diffLabel = isSection ? '初始模板' : DIFFICULTY_LABELS[selectedResetDifficulty] || selectedResetDifficulty;
+    const question = isSection ? '确定要把练习恢复为初始模板吗？' : `确定要将当前练习重置为「${diffLabel}」难度吗？`;
+    const successText = isSection ? '已恢复为初始模板' : undefined;
 
     if (typeof window !== 'undefined' && window.confirm && window.confirm._isMockFunction) {
-      const confirmed = window.confirm(`确定要将当前练习重置为「${diffLabel}」难度吗？当前修改将被备份。`);
+      const confirmed = window.confirm(`${question}当前修改将被备份。`);
       if (!confirmed) return;
-      await executeReset(selectedResetDifficulty, diffLabel);
+      await executeReset(difficulty, diffLabel, successText);
       return;
     }
 
     setConfirmModal({
       title: '重置练习确认',
       tone: 'danger',
-      message: `确定要将当前练习重置为「${diffLabel}」难度吗？`,
+      message: question,
       detail: '重置前，当前代码将自动备份到项目的 .backup/ 目录下，不会丢失。',
       confirmText: '确认重置',
       cancelText: '取消',
       confirmColor: 'danger',
       onConfirm: () => {
-        executeReset(selectedResetDifficulty, diffLabel);
+        executeReset(difficulty, diffLabel, successText);
       },
     });
   };
@@ -444,7 +453,7 @@ export default function UnitWorkspace({ unit }) {
     statusTagText = '接口不可用';
     statusTone = 'tone-muted';
   } else if (unitState === 'not-started') {
-    const diffText = DIFFICULTY_LABELS[matchedDifficulty] || matchedDifficulty;
+    const diffText = isSection ? null : DIFFICULTY_LABELS[matchedDifficulty] || matchedDifficulty;
     statusTagText = diffText ? `${UNIT_STATE_LABELS['not-started']} · ${diffText}` : UNIT_STATE_LABELS['not-started'];
     statusTone = 'tone-idle';
   } else if (unitState === 'locked') {
@@ -465,7 +474,12 @@ export default function UnitWorkspace({ unit }) {
           >
             ← 返回首页
           </button>
-          <h2 className="workspace-title">{title}</h2>
+          <div className="workspace-title-block">
+            {chapter && (isSection || chapter.sections.length > 0) && (
+              <span className="workspace-breadcrumb">{isSection ? chapter.title : '本章综合练习 · 三档难度'}</span>
+            )}
+            <h2 className="workspace-title">{title}</h2>
+          </div>
           <div className="workspace-tags">
             <span className={`workspace-tag ${statusTone}`}>{statusTagText}</span>
           </div>
@@ -485,6 +499,7 @@ export default function UnitWorkspace({ unit }) {
           </Button>
 
           <div className="workspace-reset-group">
+            {!isSection && (
             <select
               className="workspace-reset-select"
               aria-label="重置难度选择"
@@ -498,6 +513,7 @@ export default function UnitWorkspace({ unit }) {
                 </option>
               ))}
             </select>
+            )}
             <Button
               onClick={handleReset}
               loading={isResetting}
@@ -567,6 +583,8 @@ export default function UnitWorkspace({ unit }) {
           说明
         </button>
       </nav>
+
+      {activeTab === 'exercise' && <HintsPanel key={key} hints={hints} />}
 
       {/* 主展示区 */}
       <main className="workspace-main">
@@ -682,6 +700,8 @@ export default function UnitWorkspace({ unit }) {
           </div>
         )}
       </main>
+
+      <LessonNav unitKey={key} />
 
       {/* 现代优雅确认提示框（替换原生 window.confirm） */}
       {confirmModal && (

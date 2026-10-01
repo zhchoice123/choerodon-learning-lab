@@ -1,5 +1,6 @@
 import Example from './Example';
 import Exercise from './Exercise';
+import sections from './sections';
 
 const unit02 = {
   key: 'unit-02',
@@ -12,6 +13,7 @@ const unit02 = {
     'Table 查询栏与 queryFieldsLimit',
     '程序设置条件、重新查询与恢复默认条件',
   ],
+  sections,
   Example,
   Exercise,
 };

@@ -9,6 +9,19 @@ function unitError(code, message) {
   return Object.assign(new Error(message), { code });
 }
 
+// 课程 id：'01' 是章节（综合练习），'01-2' 是章节下的第 2 小节。也接受 '1'、'1-2'。
+const ID_PATTERN = /^(\d{1,2})(?:-(\d{1,2}))?$/;
+const USAGE_HINT = '请提供单元号或小节号，例如：yarn unit:reset 2 normal、yarn unit:reset 01-3（也支持 02）。';
+
+function parseLessonId(input) {
+  const match = ID_PATTERN.exec(String(input ?? ''));
+  if (!match || Number(match[1]) < 1 || (match[2] !== undefined && Number(match[2]) < 1)) return null;
+  const chapter = Number(match[1]);
+  const section = match[2] === undefined ? null : Number(match[2]);
+  const id = `${String(chapter).padStart(2, '0')}${section === null ? '' : `-${section}`}`;
+  return { chapter, section, id };
+}
+
 function createUnitTools({ rootDir = path.resolve(__dirname, '..') } = {}) {
   const root = fs.realpathSync(rootDir);
   const unitsRoot = path.join(root, 'src/units');
@@ -50,16 +63,51 @@ function createUnitTools({ rootDir = path.resolve(__dirname, '..') } = {}) {
       const metaFile = assertLocalPath(path.join(directory, 'index.js'));
       const meta = fs.existsSync(metaFile) ? fs.readFileSync(metaFile, 'utf8') : '';
       const title = /title:\s*['"]([^'"]+)['"]/.exec(meta)?.[1] || entry.name;
-      units.set(number, { number, title, directory, name: entry.name });
+      units.set(number, { number, title, directory, name: entry.name, sections: readSections(number, directory, entry.name) });
     }
-    return [...units.values()].sort((a, b) => a.number - b.number);
+    return [...units.values()]
+      .map((unit) => ({ id: String(unit.number).padStart(2, '0'), kind: 'chapter', sections: [], ...unit }))
+      .sort((a, b) => a.number - b.number);
+  }
+
+  // 小节目录：<章节目录>/sections/<序号>-<名称>/，结构与章节相同（index.js、Example.js、Exercise.js、templates/）
+  function readSections(chapterNumber, chapterDirectory, chapterName) {
+    const sectionsRoot = assertLocalPath(path.join(chapterDirectory, 'sections'));
+    if (!fs.existsSync(sectionsRoot)) return [];
+    const sections = [];
+    for (const entry of fs.readdirSync(sectionsRoot, { withFileTypes: true })) {
+      const match = /^(\d+)-.+$/.exec(entry.name);
+      if (!entry.isDirectory() || !match) continue;
+      const section = Number(match[1]);
+      if (sections.some((item) => item.section === section)) {
+        throw new Error(`单元 ${chapterNumber} 的小节 ${section} 存在多个目录，请先检查目录名称。`);
+      }
+      const directory = path.join(sectionsRoot, entry.name);
+      const metaFile = assertLocalPath(path.join(directory, 'index.js'));
+      const meta = fs.existsSync(metaFile) ? fs.readFileSync(metaFile, 'utf8') : '';
+      const id = `${String(chapterNumber).padStart(2, '0')}-${section}`;
+      sections.push({
+        id,
+        kind: 'section',
+        number: chapterNumber,
+        section,
+        title: /title:\s*['"]([^'"]+)['"]/.exec(meta)?.[1] || id,
+        directory,
+        name: `${chapterName}/sections/${entry.name}`,
+      });
+    }
+    return sections.sort((a, b) => a.section - b.section);
+  }
+
+  // 所有课程（章节和小节）按学习顺序展开：01-1、01-2 …、01、02-1 …
+  function readLessons() {
+    return readUnits().flatMap((unit) => [...unit.sections, unit]);
   }
 
   function findUnit(numberInput) {
-    if (!/^\d{1,2}$/.test(String(numberInput ?? '')) || Number(numberInput) < 1) {
-      throw unitError('UNIT_NOT_FOUND', '请提供单元号，例如：yarn unit:reset 2 normal（也支持 02）。');
-    }
-    const unit = readUnits().find((item) => item.number === Number(numberInput));
+    const parsed = parseLessonId(numberInput);
+    if (!parsed) throw unitError('UNIT_NOT_FOUND', USAGE_HINT);
+    const unit = readLessons().find((item) => item.id === parsed.id);
     if (!unit) throw unitError('UNIT_NOT_FOUND', `找不到单元 ${numberInput}，请先运行 yarn unit:list。`);
     return unit;
   }
@@ -119,9 +167,7 @@ function createUnitTools({ rootDir = path.resolve(__dirname, '..') } = {}) {
 
   function resetUnit(numberInput, difficulty = 'normal') {
     // 保持命令行参数错误的原有提示及默认难度。
-    if (!/^\d{1,2}$/.test(String(numberInput ?? '')) || Number(numberInput) < 1) {
-      throw unitError('UNIT_NOT_FOUND', '请提供单元号，例如：yarn unit:reset 2 normal（也支持 02）。');
-    }
+    if (!parseLessonId(numberInput)) throw unitError('UNIT_NOT_FOUND', USAGE_HINT);
     if (!difficulties.includes(difficulty)) {
       throw unitError('BAD_DIFFICULTY', `未知难度「${difficulty}」，可用值：easy、normal、hard。`);
     }
@@ -144,27 +190,32 @@ function createUnitTools({ rootDir = path.resolve(__dirname, '..') } = {}) {
     return { code: content.toString('utf8'), backupPath, exercisePath: exercise, ...getUnitState(numberInput) };
   }
 
+  function describe(lesson) {
+    const state = getUnitState(lesson.id);
+    let status = 'Exercise.js 不存在';
+    if (fs.existsSync(exercisePath(lesson.id))) {
+      status = state.matches.length ? `与 ${state.matches.join(' / ')} 模板一致` : '已改动（与所有模板均不一致）';
+      if (!state.difficulties.length) status = '暂无模板，无法比较';
+    }
+    return `可用难度：${state.difficulties.join(' / ') || '无'} ｜ ${status}`;
+  }
+
   function listUnits() {
     for (const unit of readUnits()) {
       if (!unit.directory) {
         console.log(`${unit.title} ｜ 可用难度：无 ｜ 未开放`);
         continue;
       }
-      const state = getUnitState(unit.number);
-      let status = 'Exercise.js 不存在';
-      if (fs.existsSync(exercisePath(unit.number))) {
-        status = state.matches.length ? `与 ${state.matches.join(' / ')} 模板一致` : '已改动（与所有模板均不一致）';
-        if (!state.difficulties.length) status = '暂无模板，无法比较';
-      }
-      console.log(`${unit.title} ｜ 可用难度：${state.difficulties.join(' / ') || '无'} ｜ ${status}`);
+      console.log(`${unit.title} ｜ ${describe(unit)}`);
+      for (const section of unit.sections) console.log(`  ${section.title} ｜ ${describe(section)}`);
     }
   }
 
-  return { readUnits, findUnit, getUnitState, resetUnit, saveExercise, exercisePath, assertLocalPath, listUnits };
+  return { readUnits, readLessons, findUnit, getUnitState, resetUnit, saveExercise, exercisePath, assertLocalPath, listUnits };
 }
 
 // require 时只导出工具，不解析 process.argv，也不写入任何文件。
-module.exports = { createUnitTools };
+module.exports = { createUnitTools, parseLessonId };
 
 if (require.main === module) {
   try {
@@ -177,7 +228,7 @@ if (require.main === module) {
       console.log(result.backupPath ? `已备份：${path.join(path.resolve(__dirname, '..'), result.backupPath)}` : 'Exercise.js 不存在，将从模板创建，无需备份。');
       console.log(`已重置：${result.exercisePath}（${args[1] || 'normal'}）`);
     } else {
-      throw new Error('用法：yarn unit:list 或 yarn unit:reset <单元号> [easy|normal|hard]。');
+      throw new Error('用法：yarn unit:list 或 yarn unit:reset <单元号或小节号> [easy|normal|hard]，例如 yarn unit:reset 01-3。');
     }
   } catch (error) {
     console.error(`单元工具错误：${error.message}`);

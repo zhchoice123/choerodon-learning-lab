@@ -1,10 +1,21 @@
 # 接口契约（三个任务共同遵守，修改需经任务 D 统一处理）
 
-## 1. 单元标识
+## 1. 课程标识：章节与小节
 
-- 单元号 `number`：两位字符串，`"01"`～`"09"`
-- 单元 key：`"unit-01"`，与 src/units/index.js 中一致
-- 难度：`"easy" | "normal" | "hard"`，页面文案见 src/learn/constants.js（入门 / 标准 / 挑战）
+每章拆成若干**小节**（一个小节一个知识点），章节本身是该章的**综合练习**。两者统称「课程」，结构相同（index.js、Example.js、Exercise.js、README.md、templates/）。
+
+| | 章节（综合练习） | 小节 |
+|---|---|---|
+| 课程号 `number` | `"01"`～`"09"` | `"01-2"`（章节号-小节序号） |
+| key | `"unit-01"` | `"unit-01-2"` |
+| 目录 | `src/units/01-dataset-basics/` | `src/units/01-dataset-basics/sections/2-table-columns/` |
+| 难度 | `easy` / `normal` / `hard` | 只有 `normal`（单一难度 + 逐级提示） |
+| 备份 | `.backup/01-dataset-basics/` | `.backup/01-dataset-basics/sections/2-table-columns/` |
+
+- 难度文案见 src/learn/constants.js（入门 / 标准 / 挑战）
+- 学习顺序：每章先学小节，再做综合练习：`01-1 … 01-7, 01, 02-1 …`
+- 服务端从目录发现小节；前端从各章 `sections/index.js` 导入。两者必须一致（src/units/sections.test.js 校验）
+- 课程号也接受不补零的写法：`1`、`1-2`
 
 ## 2. 页面路由（src/learn/router.js，任务 0 提供）
 
@@ -35,17 +46,23 @@ addNavigationGuard(guard)  // guard(目标路由) 返回 false 即取消跳转�
 ## 3. 组件接口
 
 ```js
-// 任务 B：首页
-// units：src/units/index.js 导出的数组（含未开放单元）
+// 首页
+// units：src/learn/lessons.js 的 chapters（含未开放章节），每章带 sections 数组
 export default function HomePage({ units }) {}
 
-// 任务 C：单元工作台
-// unit：注册表中的一项（key、title、points、doc、Example、Exercise）
+// 课程工作台
+// unit：src/learn/lessons.js 的一门课程（章节或小节）：key、title、doc、Example、Exercise，
+//   kind（'chapter' / 'section'）；小节另有 chapter（所属章节）、hints（1～3 条逐级提示）
 export default function UnitWorkspace({ unit }) {}
 ```
 
-单元 meta 可选 `exclusivePreview: true`：工作台只挂载当前标签的预览（样例和练习不同时存在）。
-用于会修改全局状态的单元（单元 09 的 configure / 语言包），默认不设置，其他单元的预览行为不变。
+src/learn/lessons.js 提供课程目录：`chapters`、`lessons`（学习顺序）、`findLesson(key)`、`chapterOf(lesson)`、`neighbors(key)`、`lessonLabel(lesson)`。
+
+课程 meta 可选 `exclusivePreview: true`：工作台只挂载当前标签的预览（样例和练习不同时存在）。
+用于会修改全局状态的课程（第 09 章及其小节的 configure / 语言包），默认不设置，其他课程的预览行为不变。
+
+小节 mock：第 03～09 章的每个小节拥有所属章节 mock 的独立副本，前缀 `/mock/s/<小节号>/`（mock/sections.js），
+协议与章节相同、数据互不影响；第 01、02 章小节只读共享接口（`/mock/roles`、`/mock/guide/user`）。
 
 两个组件都要在「本地接口不可用」时（`yarn build` 产物、jest 测试、任务 A 未完成）优雅降级：
 显示提示，不白屏、不抛错。
@@ -55,6 +72,8 @@ export default function UnitWorkspace({ unit }) {}
 前缀 `/__learn/api`。请求和响应都是 JSON。错误统一为 `{ "error": "<CODE>", "message": "<中文说明>" }`。
 
 ### GET /__learn/api/units
+
+按学习顺序列出所有课程（小节在前、章节在后），每项额外带 `chapter`（所属章节号）和 `kind`（`"section"` / `"chapter"`）。未开放章节不列出小节。
 ```json
 { "units": [
   { "number": "01", "key": "unit-01", "title": "01 DataSet 基础与 Table 绑定",

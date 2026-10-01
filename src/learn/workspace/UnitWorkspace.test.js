@@ -107,11 +107,8 @@ jest.mock('../api', () => {
       getExample: jest.fn(),
       getReadme: jest.fn(),
     },
-    unitNumberFromKey: (key) => {
-      const match = /^unit-(\d{2})$/.exec(key || '');
-      if (!match) throw new Error(`无效的单元 key：${key}`);
-      return match[1];
-    },
+    // 用真实实现，避免和 api.js 的规则（章节 unit-01、小节 unit-01-2）不同步
+    unitNumberFromKey: jest.requireActual('../api').unitNumberFromKey,
   };
 });
 
@@ -389,6 +386,39 @@ describe('UnitWorkspace', () => {
       fireEvent.click(exampleTab);
     });
     expect(exampleTab).toHaveClass('is-active');
+
+    confirmSpy.mockRestore();
+  });
+
+  test('小节：显示所属章节和逐级提示，没有难度选择，重置恢复初始模板', async () => {
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+    const sectionUnit = {
+      ...dummyUnit,
+      key: 'unit-01-2',
+      title: '01-2 Table 绑定：columns 只写 name',
+      kind: 'section',
+      chapter: { key: 'unit-01', title: '01 DataSet 基础与 Table 绑定', sections: [] },
+      hints: ['第一条提示', '第二条提示'],
+    };
+
+    render(<UnitWorkspace unit={sectionUnit} />);
+    await waitFor(() => {
+      expect(screen.getByTestId('exercise-editor')).toHaveValue('const initialCode = true;');
+    });
+
+    expect(screen.getByText('01 DataSet 基础与 Table 绑定')).toHaveClass('workspace-breadcrumb');
+    expect(screen.getByRole('button', { name: '查看提示 1' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('重置难度选择')).not.toBeInTheDocument();
+    // 小节只有一档：状态标签不显示难度
+    expect(screen.getByText('未开始')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /上一课/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /下一课/ })).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '重置' }));
+    });
+    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('初始模板'));
+    expect(learnApi.resetExercise).toHaveBeenCalledWith('01-2', 'normal');
 
     confirmSpy.mockRestore();
   });

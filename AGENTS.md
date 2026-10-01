@@ -2,7 +2,8 @@
 
 ## Project Structure & Module Organization
 
-- `src/units/`: numbered lessons (`08-modal/`) containing metadata, `Example.js`, `Exercise.js`, README, and easy/normal/hard templates; `index.js` registers lessons.
+- `src/units/`: numbered chapters (`08-modal/`) containing metadata, `Example.js`, `Exercise.js`, README, and easy/normal/hard templates (the chapter capstone); `index.js` registers chapters.
+- `src/units/<chapter>/sections/<n>-<slug>/`: one section per knowledge point (lesson id `08-3`, key `unit-08-3`) with the same files but only `templates/Exercise.normal.js`, plus `hints` in its meta. Register each section in the chapter's `sections/index.js`; `src/units/sections.test.js` fails if the registry and the directories disagree.
 - `src/learn/`: workspace routing, API client, home, and editor components.
 - `src/playground/`: learner-owned experiments; preserve existing work.
 - `mock/`: CommonJS mock routes and seeds. `devtools/`: development-only learning APIs and Monaco assets. `src/setupProxy.js` registers both.

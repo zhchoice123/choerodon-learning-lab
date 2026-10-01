@@ -30,7 +30,8 @@ test('免登录身份、作业/备份/mock 隔离、拒绝伪造及跨站写入�
   const cookieB = b.response.headers.get('set-cookie').split(';')[0];
   assert.notEqual(cookieA, cookieB);
   assert.match(a.response.headers.get('set-cookie'), /HttpOnly; Secure; SameSite=Lax/);
-  assert.equal(a.data.units.length, 9);
+  assert.equal(a.data.units.filter((unit) => unit.kind === 'chapter').length, 9);
+  assert.ok(a.data.units.some((unit) => unit.key === 'unit-01-1' && unit.kind === 'section'));
   const route = '/__learn/api/units/02/exercise';
   const original = (await call(route, cookieA)).data.code;
   assert.equal(original, fs.readFileSync(path.resolve(__dirname, '../src/units/02-query-conditions/templates/Exercise.normal.js'), 'utf8'));
@@ -87,4 +88,43 @@ test('全部 27 份 TODO 模板都能在固定编译器转换，练习原文不�
     }
   }
   assert.equal(count, 27);
+});
+
+test('小节：访客独立保存；小节上线前创建的旧访客工作区会补齐小节，且不动已有作业', async (t) => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'choero-cloud-sections-'));
+  const options = { dataDir, secret: 'test-secret-'.repeat(8), origin: 'https://learn.test' };
+  const server = createCloudApp(options).listen(0, '127.0.0.1');
+  await new Promise((resolve) => server.once('listening', resolve));
+  t.after(async () => { await new Promise((resolve) => server.close(resolve)); fs.rmSync(dataDir, { recursive: true, force: true }); });
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const call = async (route, cookie, method = 'GET', body) => {
+    const response = await fetch(`${base}${route}`, { method, headers: {
+      ...(cookie ? { Cookie: cookie } : {}), Origin: options.origin, 'Content-Type': 'application/json',
+    }, body: body === undefined ? undefined : JSON.stringify(body) });
+    return { response, data: await response.json() };
+  };
+  const first = await call('/__learn/api/units');
+  const cookie = first.response.headers.get('set-cookie').split(';')[0];
+  const visitor = cookie.split('=')[1].split('.')[0];
+  // 写一次作业，创建访客工作区
+  const chapterCode = '// 访客在章节 02 的作业\n';
+  assert.equal((await call('/__learn/api/units/02/exercise', cookie, 'PUT', { code: chapterCode })).response.status, 200);
+  const sectionCode = '// 访客在小节 01-1 的作业\n';
+  assert.equal((await call('/__learn/api/units/01-1/exercise', cookie, 'PUT', { code: sectionCode })).response.status, 200);
+  assert.equal((await call('/__learn/api/units/01-1/exercise', cookie)).data.code, sectionCode);
+
+  // 模拟「小节上线前」创建的旧工作区：删掉所有 sections 目录
+  const unitsDir = path.join(dataDir, visitor, 'src/units');
+  for (const chapter of fs.readdirSync(unitsDir, { withFileTypes: true }).filter((entry) => entry.isDirectory())) {
+    fs.rmSync(path.join(unitsDir, chapter.name, 'sections'), { recursive: true, force: true });
+  }
+  // 再访问时补齐小节：小节回到初始模板，章节作业保持不变
+  const listed = await call('/__learn/api/units', cookie);
+  assert.equal(listed.data.units.find((unit) => unit.key === 'unit-01-1').state, 'not-started');
+  assert.equal((await call('/__learn/api/units/02/exercise', cookie)).data.code, chapterCode);
+  const restored = await call('/__learn/api/units/01-1/exercise', cookie);
+  assert.equal(restored.response.status, 200);
+  assert.equal(restored.data.code, fs.readFileSync(path.resolve(__dirname, '../src/units/01-dataset-basics/sections/1-fields/templates/Exercise.normal.js'), 'utf8'));
+  // 小节只有一档难度
+  assert.equal((await call('/__learn/api/units/01-1/reset', cookie, 'POST', { difficulty: 'hard' })).response.status, 404);
 });
