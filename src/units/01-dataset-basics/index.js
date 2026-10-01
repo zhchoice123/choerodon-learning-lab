@@ -1,5 +1,6 @@
 import Example from './Example';
 import Exercise from './Exercise';
+import sections from './sections';
 
 const unit01 = {
   key: 'unit-01',
@@ -14,6 +15,7 @@ const unit01 = {
     'DataSet 是 MobX 可观察对象：observer 自动刷新',
     '常用实例成员：query()、current、selected、totalCount、record.get()',
   ],
+  sections,
   Example,
   Exercise,
 };

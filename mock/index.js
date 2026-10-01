@@ -11,6 +11,7 @@ const registerUnit07 = require('./unit07');
 const registerUnit08 = require('./unit08');
 const registerUnit09 = require('./unit09');
 const registerPlayground = require('./playground');
+const registerSectionMocks = require('./sections');
 
 module.exports = function registerMock(app) {
   registerUnit03(app);
@@ -21,6 +22,8 @@ module.exports = function registerMock(app) {
   registerUnit08(app);
   registerUnit09(app);
   registerPlayground(app);
+  // 各小节的独立 mock 副本：/mock/s/<小节 id>/...
+  registerSectionMocks(app);
   // 员工列表：学习单元「练习」、自由练习区使用
   listRoute(app, '/mock/guide/user', () => users);
   // 角色列表：学习单元「样例」使用

@@ -193,3 +193,60 @@
   margin-top: 16px;
 }
 
+
+/* 章节卡片里的小节列表 */
+.learn-home-sections {
+  flex: 1;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.learn-home-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  color: #334155;
+  font-size: 12.5px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.learn-home-section:hover {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.learn-home-section-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learn-home-section-tag {
+  flex: 0 0 auto;
+  font-size: 11px;
+}
+
+.learn-home-section-tag.tone-idle {
+  color: #94a3b8;
+}
+
+.learn-home-section-tag.tone-active {
+  color: #d97706;
+}
+
+.learn-home-capstone {
+  margin: 0 0 8px;
+  padding-top: 10px;
+  color: #64748b;
+  font-size: 12px;
+  border-top: 1px dashed #e2e8f0;
+}

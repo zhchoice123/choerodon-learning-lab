@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const { parse } = require('@babel/parser');
-const { createUnitTools } = require('../scripts/unit');
+const { createUnitTools, parseLessonId } = require('../scripts/unit');
 const readRegisteredUnits = require('./lib/registered-units');
 
 const PREFIX = '/__learn/api';
@@ -15,37 +15,44 @@ module.exports = function registerLearnApi(app, { rootDir = path.resolve(__dirna
   const router = express.Router();
   // 仅解析本接口的请求体，不能影响 mock 接口的记录数组解析。
   router.use(express.json({ limit: BODY_LIMIT }));
-  const stateOf = (number) => {
-    const { state, matched } = tools.getUnitState(number);
+  const stateOf = (id) => {
+    const { state, matched } = tools.getUnitState(id);
     return { state, matched };
   };
-  const registeredUnits = () => readRegisteredUnits(root, tools);
+  // 按学习顺序展开：每章先列小节，再列章节本身（综合练习）。未开放章节没有小节。
+  const registeredLessons = () => readRegisteredUnits(root, tools).flatMap((unit) => [...(unit.sections || []), unit]);
 
   router.get('/units', (req, res) => {
     res.json({
-      units: registeredUnits().map((unit) => ({
-        number: String(unit.number).padStart(2, '0'),
-        key: `unit-${String(unit.number).padStart(2, '0')}`,
-        title: unit.title,
-        open: Boolean(unit.directory),
-        difficulties: unit.directory ? tools.getUnitState(unit.number).difficulties : [],
-        ...(unit.directory ? stateOf(unit.number) : { state: 'locked', matched: null }),
-      })),
+      units: registeredLessons().map((lesson) => {
+        const id = lesson.id || String(lesson.number).padStart(2, '0');
+        return {
+          number: id,
+          key: `unit-${id}`,
+          chapter: String(lesson.number).padStart(2, '0'),
+          kind: lesson.kind || 'chapter',
+          title: lesson.title,
+          open: Boolean(lesson.directory),
+          difficulties: lesson.directory ? tools.getUnitState(id).difficulties : [],
+          ...(lesson.directory ? stateOf(id) : { state: 'locked', matched: null }),
+        };
+      }),
     });
   });
 
   router.param('number', (req, res, next, number) => {
-    // 不拼接客户端提供的路径；注册表中未开放的单元即使有同名单元目录也拒绝访问。
-    const unit = /^\d{1,2}$/.test(number) && registeredUnits().find((item) => item.number === Number(number));
-    if (!unit) return res.status(404).json({ error: 'UNIT_NOT_FOUND', message: `找不到单元「${number}」。` });
-    if (!unit.directory) return res.status(409).json({ error: 'UNIT_LOCKED', message: `单元 ${number} 尚未开放。` });
-    req.learnUnit = unit;
+    // 不拼接客户端提供的路径；只接受 01 / 01-2 这类课程 id，并且必须在注册表中。
+    const parsed = parseLessonId(number);
+    const lesson = parsed && registeredLessons().find((item) => (item.id || String(item.number).padStart(2, '0')) === parsed.id);
+    if (!lesson) return res.status(404).json({ error: 'UNIT_NOT_FOUND', message: `找不到单元「${number}」。` });
+    if (!lesson.directory) return res.status(409).json({ error: 'UNIT_LOCKED', message: `单元 ${number} 尚未开放。` });
+    req.learnUnit = lesson;
     next();
   });
 
   router.get('/units/:number/exercise', (req, res) => {
-    const number = req.learnUnit.number;
-    res.json({ code: fs.readFileSync(tools.exercisePath(number), 'utf8'), ...stateOf(number) });
+    const { id } = req.learnUnit;
+    res.json({ code: fs.readFileSync(tools.exercisePath(id), 'utf8'), ...stateOf(id) });
   });
 
   router.put('/units/:number/exercise', (req, res) => {
@@ -65,7 +72,7 @@ module.exports = function registerLearnApi(app, { rootDir = path.resolve(__dirna
         column: error.loc.column + 1,
       });
     }
-    const { state, matched } = tools.saveExercise(req.learnUnit.number, code);
+    const { state, matched } = tools.saveExercise(req.learnUnit.id, code);
     res.json({ saved: true, state, matched });
   });
 
@@ -74,7 +81,7 @@ module.exports = function registerLearnApi(app, { rootDir = path.resolve(__dirna
     if (!['easy', 'normal', 'hard'].includes(difficulty)) {
       return res.status(400).json({ error: 'BAD_DIFFICULTY', message: 'difficulty 必须是 easy、normal 或 hard。' });
     }
-    const { code, state, matched, backupPath } = tools.resetUnit(req.learnUnit.number, difficulty);
+    const { code, state, matched, backupPath } = tools.resetUnit(req.learnUnit.id, difficulty);
     res.json({ code, state, matched, backupPath });
   });
 

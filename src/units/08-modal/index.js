@@ -1,5 +1,6 @@
 import Example from './Example';
 import Exercise from './Exercise';
+import sections from './sections';
 
 const unit08 = {
   key: 'unit-08',
@@ -12,6 +13,7 @@ const unit08 = {
     'onCancel 用 record.reset 回滚，取消新增移除草稿',
     '失败留窗、保存期间防重复与组件卸载清理',
   ],
+  sections,
   Example,
   Exercise,
 };

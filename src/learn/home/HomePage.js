@@ -34,7 +34,33 @@ function stateTag(unit, loadStatus, status) {
   return { text: UNIT_STATE_LABELS['in-progress'], tone: 'active' };
 }
 
-function UnitCard({ unit, loadStatus, status, busy, onSelect }) {
+// 小节状态：只区分「未开始」和「进行中」（小节只有一档难度）
+function sectionTag(loadStatus, status) {
+  if (loadStatus !== 'ready' || !status) return null;
+  return status.state === 'in-progress'
+    ? { text: UNIT_STATE_LABELS['in-progress'], tone: 'active' }
+    : { text: UNIT_STATE_LABELS['not-started'], tone: 'idle' };
+}
+
+function SectionList({ sections, loadStatus, byKey }) {
+  return (
+    <ol className="learn-home-sections" aria-label="小节">
+      {sections.map((section) => {
+        const tag = sectionTag(loadStatus, byKey.get(section.key));
+        return (
+          <li key={section.key}>
+            <button type="button" className="learn-home-section" onClick={() => enter(section.key)}>
+              <span className="learn-home-section-title">{section.title}</span>
+              {tag && <span className={`learn-home-section-tag tone-${tag.tone}`}>{tag.text}</span>}
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function UnitCard({ unit, loadStatus, status, busy, onSelect, byKey }) {
   const [number, name] = splitTitle(unit.title);
   const locked = !unit.Example || status?.state === 'locked';
   const tag = stateTag(unit, loadStatus, status);
@@ -47,11 +73,18 @@ function UnitCard({ unit, loadStatus, status, busy, onSelect }) {
         <h3 className="learn-home-card-title">{name}</h3>
         <span className={`learn-home-tag tone-${tag.tone}`}>{tag.text}</span>
       </header>
-      <ul className="learn-home-card-points">
-        {unit.points.map((point) => (
-          <li key={point}>{point}</li>
-        ))}
-      </ul>
+      {unit.sections && unit.sections.length > 0 ? (
+        <>
+          <SectionList sections={unit.sections} loadStatus={loadStatus} byKey={byKey} />
+          <div className="learn-home-capstone">本章综合练习 · 三档难度</div>
+        </>
+      ) : (
+        <ul className="learn-home-card-points">
+          {unit.points.map((point) => (
+            <li key={point}>{point}</li>
+          ))}
+        </ul>
+      )}
       <div className="learn-home-card-actions">
         {DIFFICULTIES.map(({ key, label }) => (
           <Button
@@ -107,8 +140,8 @@ export default function HomePage({ units }) {
     <div className="learn-home">
       <h2>Choerodon UI 学习路线</h2>
       <p className="learn-home-intro">
-        每个单元都可以单独选择难度：入门步骤拆得更细，标准与单元说明一致，挑战只给需求并多一个额外任务。
-        选择后进入单元，在页面里编辑代码并实时查看效果。
+        每章先按小节逐个学习知识点：每个小节一个知识点、一个小练习，卡住时可以逐级查看提示。
+        学完小节再做本章综合练习，综合练习可以选择难度：入门步骤更细，标准与说明一致，挑战只给需求并多一个额外任务。
       </p>
 
       {loadStatus === 'unavailable' && (
@@ -136,6 +169,7 @@ export default function HomePage({ units }) {
             // 本卡片正在处理：对应难度；其他卡片正在处理：'other'（全部禁用）；空闲：null
             busy={busy ? (busy.key === unit.key ? busy.difficulty : 'other') : null}
             onSelect={handleSelect}
+            byKey={byKey}
           />
         ))}
       </div>

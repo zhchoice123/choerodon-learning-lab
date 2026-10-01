@@ -1,5 +1,6 @@
 import Example from './Example';
 import Exercise from './Exercise';
+import sections from './sections';
 
 const unit06 = {
   key: 'unit-06',
@@ -12,6 +13,7 @@ const unit06 = {
     'record.set 联动赋值、清理失效子值与防止递归',
     '当前记录与事件记录的区别，选中与定位的区别',
   ],
+  sections,
   Example,
   Exercise,
 };

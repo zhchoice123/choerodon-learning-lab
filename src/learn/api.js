@@ -62,9 +62,9 @@ export const learnApi = {
   getReadme: (number) => request('GET', `${unitPath(number)}/readme`),
 };
 
-// 'unit-05' → '05'
+// 'unit-05' → '05'（章节）；'unit-05-2' → '05-2'（小节）
 export function unitNumberFromKey(key) {
-  const match = /^unit-(\d{2})$/.exec(key || '');
+  const match = /^unit-(\d{2}(?:-\d{1,2})?)$/.exec(key || '');
   if (!match) throw new Error(`无效的单元 key：${key}`);
   return match[1];
 }

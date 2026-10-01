@@ -1,5 +1,6 @@
 import Example from './Example';
 import Exercise from './Exercise';
+import sections from './sections';
 
 const unit05 = {
   key: 'unit-05',
@@ -12,6 +13,7 @@ const unit05 = {
     'submit 与 id 回写、record.status、dataSet.dirty',
     '提交失败保留草稿，区分删除失败与新增 / 修改失败',
   ],
+  sections,
   Example,
   Exercise,
 };

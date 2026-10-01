@@ -51,17 +51,61 @@ test('列表有九个注册单元，准确区分三种状态和可用难度', as
   const { request } = await fixture(t);
   const { status, data } = await request('/units');
   assert.equal(status, 200);
-  assert.equal(data.units.length, 9);
-  assert.deepEqual(data.units[0], {
-    number: '01', key: 'unit-01', title: '01 DataSet 基础与 Table 绑定', open: true,
+  // 列表按学习顺序混排小节和章节；这里只核对 9 个章节
+  const chapters = data.units.filter((unit) => unit.kind === 'chapter');
+  assert.equal(chapters.length, 9);
+  assert.deepEqual(chapters[0], {
+    number: '01', key: 'unit-01', chapter: '01', kind: 'chapter', title: '01 DataSet 基础与 Table 绑定', open: true,
     difficulties: ['easy', 'normal', 'hard'], ...state('not-started', 'normal'),
   });
-  assert.equal(data.units[1].state, 'in-progress');
-  assert.equal(data.units[1].matched, null);
-  assert.deepEqual(data.units[8], {
-    number: '09', key: 'unit-09', title: '09 全局配置与国际化', open: false,
+  assert.equal(chapters[1].state, 'in-progress');
+  assert.equal(chapters[1].matched, null);
+  assert.deepEqual(chapters[8], {
+    number: '09', key: 'unit-09', chapter: '09', kind: 'chapter', title: '09 全局配置与国际化', open: false,
     difficulties: [], ...state('locked', null),
   });
+});
+
+test('小节：按学习顺序列出，可以读取、保存、重置并备份到小节自己的目录', async (t) => {
+  const { root, directory, request } = await fixture(t);
+  // 临时项目里造一个与真实内容无关的小节，只验证框架行为
+  const section = path.join(directory, 'sections/1-demo');
+  fs.rmSync(path.join(directory, 'sections'), { recursive: true, force: true });
+  fs.mkdirSync(path.join(section, 'templates'), { recursive: true });
+  fs.writeFileSync(path.join(section, 'index.js'), "const lesson = { key: 'unit-01-1', title: '01-1 演示小节' };\nexport default lesson;\n");
+  fs.writeFileSync(path.join(section, 'Example.js'), '// 样例\n');
+  fs.writeFileSync(path.join(section, 'README.md'), '# 演示\n');
+  fs.writeFileSync(path.join(section, 'templates/Exercise.normal.js'), '// 模板\n');
+  fs.writeFileSync(path.join(section, 'Exercise.js'), '// 模板\n');
+
+  const { data } = await request('/units');
+  const keys = data.units.map((unit) => unit.key);
+  assert.ok(keys.indexOf('unit-01-1') >= 0 && keys.indexOf('unit-01-1') < keys.indexOf('unit-01'), '小节排在所属章节之前');
+  assert.deepEqual(data.units.find((unit) => unit.key === 'unit-01-1'), {
+    number: '01-1', key: 'unit-01-1', chapter: '01', kind: 'section', title: '01-1 演示小节', open: true,
+    difficulties: ['normal'], ...state('not-started', 'normal'),
+  });
+
+  assert.deepEqual((await request('/units/01-1/exercise')).data, { code: '// 模板\n', ...state('not-started', 'normal') });
+  assert.equal((await request('/units/1-1/exercise')).status, 200, '也接受不补零的写法');
+  assert.equal((await request('/units/01-1/example')).data.code, '// 样例\n');
+
+  const saved = await request('/units/01-1/exercise', 'PUT', { code: '// 我的答案\n' });
+  assert.deepEqual(saved.data, { saved: true, ...state('in-progress', null) });
+  assert.equal(fs.readFileSync(path.join(section, 'Exercise.js'), 'utf8'), '// 我的答案\n');
+  // 章节自己的练习不受影响
+  assert.equal((await request('/units/01/exercise')).data.state, 'not-started');
+
+  const reset = await request('/units/01-1/reset', 'POST', { difficulty: 'normal' });
+  assert.equal(reset.status, 200);
+  assert.match(reset.data.backupPath, /^\.backup\/01-dataset-basics\/sections\/1-demo\/Exercise\..+\.js$/);
+  assert.equal(fs.readFileSync(path.join(root, reset.data.backupPath), 'utf8'), '// 我的答案\n');
+  assert.equal(fs.readFileSync(path.join(section, 'Exercise.js'), 'utf8'), '// 模板\n');
+  assert.equal((await request('/units/01-1/reset', 'POST', { difficulty: 'hard' })).status, 404, '小节只有 normal 一档');
+
+  for (const bad of ['01-0', '01-2', '1-1-1', '01-', '09-1']) {
+    assert.equal((await request(`/units/${encodeURIComponent(bad)}/exercise`)).status, 404, bad);
+  }
 });
 
 test('多个模板相同时 matched 按 easy → normal → hard 取第一个', async (t) => {
@@ -255,10 +299,19 @@ test('未注册目录不能获得写权限，预告单元即使出现目录也�
     const result = await request(`/units/${number}/exercise`, 'PUT', { code: '// 不可写' });
     assert.equal(result.status, number === '09' ? 409 : 404);
     assert.deepEqual(fs.readFileSync(path.join(copy, 'Exercise.js')), before);
+    // 复制来的目录里也带着 sections/：未注册章节下的小节同样不能读写
+    const sectionCopy = path.join(copy, 'sections/1-fields/Exercise.js');
+    const sectionBefore = fs.readFileSync(sectionCopy);
+    assert.equal((await request(`/units/${number}-1/exercise`, 'PUT', { code: '// 不可写' })).status, 404);
+    assert.equal((await request(`/units/${number}-1/exercise`)).status, 404);
+    assert.deepEqual(fs.readFileSync(sectionCopy), sectionBefore);
   }
   const { data } = await request('/units');
-  assert.equal(data.units.length, 9);
-  assert.equal(data.units[8].open, false);
+  const chapters = data.units.filter((unit) => unit.kind === 'chapter');
+  assert.equal(chapters.length, 9);
+  assert.equal(chapters[8].open, false);
+  // 未开放的章节不列出任何小节
+  assert.equal(data.units.some((unit) => unit.chapter === '09' && unit.kind === 'section'), false);
 });
 
 test('模板缺失返回 404，备份目录不可写返回 500，两者均保留原练习', async (t) => {

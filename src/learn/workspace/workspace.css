@@ -620,3 +620,85 @@
   border-color: #b91c1c;
 }
 
+
+/* 小节：面包屑、逐级提示、上一课 / 下一课 */
+.workspace-title-block {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.workspace-breadcrumb {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.workspace-hints {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.workspace-hints-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.workspace-hints-title {
+  color: #92400e;
+  font-weight: 600;
+}
+
+.workspace-hints-count {
+  color: #a16207;
+  font-size: 12px;
+}
+
+.workspace-hints-next,
+.workspace-hints-hide {
+  padding: 2px 10px;
+  color: #92400e;
+  font-size: 12px;
+  background: #fff;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.workspace-hints-hide {
+  border-color: transparent;
+  background: transparent;
+}
+
+.workspace-hints-list {
+  margin: 8px 0 2px;
+  padding-left: 20px;
+  color: #78350f;
+  line-height: 1.8;
+}
+
+.workspace-lesson-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.workspace-lesson-link {
+  padding: 6px 12px;
+  color: #2563eb;
+  font-size: 13px;
+  background: #fff;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.workspace-lesson-link:hover {
+  background: #eff6ff;
+}
